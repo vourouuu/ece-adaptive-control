@@ -60,6 +60,9 @@ cd [your_path]
 
 ```bash
 git clone git@github.com:vourouuu/ece-adaptive-control.git
+```
+
+```bash
 cd ece-adaptive-control
 ```
 
