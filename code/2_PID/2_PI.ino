@@ -1,5 +1,5 @@
 #define MOTOR_FWD     5 // Motor Forward pin
-#define MOTOR_REV     6 // Motor Reverse pin
+#define MOTOR_REV     4 // Motor Reverse pin
 #define ENCODER_PIN1  2 // Encoder Output 'A' must connected with intreput pin of arduino.
 #define ENCODER_PIN2  3 // Encoder Output 'B' must connected with intreput pin of arduino.
 #define PPR           7 // Encoder Pulses per Revolution (from datasheet)
@@ -15,7 +15,7 @@ unsigned long dt = 0;
 float Ts = 100;
 
 int motorSpeed = 0;
-int PWM_in = 0;
+int u = 0;
 float RPM = 0;
 
 int ref = 0; // Reference Signal in RPM
@@ -23,6 +23,14 @@ float Kp = 3;
 float Ki = 300;
 float error = 0;
 float error_integral = 0;
+
+// Reference sequence
+int refs[]   = {22, 22, 22};       // r1, r2, r3 (reference signals)
+int delays[] = {8000, 6000, 6000}; // delay1, delay2, delay3 (ms)
+
+int numSteps = sizeof(refs) / sizeof(refs[0]);
+int currentStep = 0;
+unsigned long stepStartTime = 0;
 
 void setup() {
     Serial.begin(9600);
@@ -34,32 +42,45 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(ENCODER_PIN1), countPulse, RISING);
     
     lastTime = millis();
+    stepStartTime = millis();
 }
 
 void loop() {
-    // If there are new data of serial monitor
-    if (Serial.available() > 1 || Serial.available() < -1) {
-        ref = Serial.parseInt();
-        error_integral = 0;
-    }
-
+    // For step function
     currentTime = millis();
     dt = currentTime - lastTime;
+    
+    if (currentTime - stepStartTime >= delays[currentStep]) {
+        currentStep++;
+        if (currentStep >= numSteps) {
+            currentStep = 0;
+        }
+
+        ref = refs[currentStep];
+        stepStartTime = currentTime;
+    }
+
+    // For sinusoidal function
+    // t = millis() * 0.001;  // (sec)
+    // ref = 16 + 3*sin(0.4*t);
 
     if (dt >= Ts) {
-        error = (ref - RPM); // normalized error
-        error_integral += error * (dt / 1000);
+        dt = dt / 1000;
+        error = (ref - RPM);
+        error_integral += error * dt;
 
         // PWM calculation
-        PWM_in = 200 + Kp * error + Ki * error_integral;
+        u = 200 + Kp * error + Ki * error_integral;
         
-        if (PWM_in >= 0 && PWM_in <= 255) {
-            motorSpeed = PWM_in; 
-            analogWrite(MOTOR_FWD, motorSpeed); 
+        if (u >= 0 && u <= 255) {
+            motorSpeed = u; 
+            analogWrite(MOTOR_FWD, motorSpeed);
+            analogWrite(MOTOR_REV, 0);
         }
-        else if (PWM_in < 0 && PWM_in >= -255) {
-            motorSpeed = -PWM_in; 
+        else if (u < 0 && u >= -255) {
+            motorSpeed = -u; 
             analogWrite(MOTOR_REV, motorSpeed);
+            analogWrite(MOTOR_FWD, 0);
         }
 
         // RPM calculation
@@ -71,25 +92,11 @@ void loop() {
         lastTime = currentTime;
 
         attachInterrupt(digitalPinToInterrupt(ENCODER_PIN1), countPulse, RISING);
-
-        // Helper signals
-        Serial.print("u:");
-        Serial.println(28);
-        Serial.print("l:");
-        Serial.println(0);
-
-        // Plots
-        Serial.print("ref:");
-        Serial.println(ref);
-
-        Serial.print("RPM:");
-        Serial.println(RPM);
-
-        Serial.print("PWM:");
-        Serial.println(PWM_in);
         
-        Serial.print("error:");
-        Serial.println(error);
+        // Plots
+        Serial.print(RPM);
+        Serial.print(",");
+        Serial.println(ref);
     }
 }
 
