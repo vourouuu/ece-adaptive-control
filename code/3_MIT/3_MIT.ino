@@ -1,6 +1,6 @@
 
 #define MOTOR_FWD     5 // Motor Forward pin
-#define MOTOR_REV     6 // Motor Reverse pin
+#define MOTOR_REV     4 // Motor Reverse pin
 #define ENCODER_PIN1  2 // Encoder Output 'A' must connected with intreput pin of arduino.
 #define ENCODER_PIN2  3 // Encoder Output 'B' must connected with intreput pin of arduino.
 #define PPR           7 // Encoder Pulses per Revolution (from datasheet)
@@ -29,9 +29,16 @@ float r_filtered = 0, r_filtered_dot = 0;
 float yp_filtered = 0, yp_filtered_dot = 0;
 float theta1 = 0, theta2 = 0, theta1_dot = 0, theta2_dot = 0;
 
-float am = 5, bm = 5;
-float gamma = 0.01;
-int A = 7, omega = 1, t = 0; // Amplitude, ω (rad/sec), time (sec)
+float am = 1, bm = 1;
+float gamma = 1;
+
+// Reference sequence
+int refs[]   = {20, 20, 20};       // r1, r2, r3 (reference signals)
+int delays[] = {8000, 6000, 6000}; // delay1, delay2, delay3 (ms)
+
+int numSteps = sizeof(refs) / sizeof(refs[0]);
+int currentStep = 0;
+unsigned long stepStartTime = 0;
 
 void setup() {
     Serial.begin(9600);
@@ -46,31 +53,29 @@ void setup() {
 }
 
 void loop() {
-    // If there are new data of serial monitor
-    if (Serial.available() > 1 || Serial.available() < -1) {
-        ref = Serial.parseInt();
-    }
-
     currentTime = millis();
     dt = currentTime - lastTime;
 
+    // For step function
+    // if (currentTime - stepStartTime >= delays[currentStep]) {
+    //     currentStep++;
+    //     if (currentStep >= numSteps) {
+    //         currentStep = 0;
+    //     }
+
+    //     ref = refs[currentStep];
+    //     stepStartTime = currentTime;
+    // }
+
+    // For sinusoidal function
+    t = currentTime * 0.001;  // (sec)
+    ref = 16 + 5*sin(3*t);
+
     if (dt >= Ts) {
         dt = dt/1000;
-        
-        /*
-            Testing with different signals:
-                1. step function
-                2. sinusoidal function
-            in RPM.
-        */
-        
-        // 1. step function
         r = ref;
-        // 2. sinusoidal function
-        // t = millis() / 700.0;
-        // r = ref + A * sin(omega * t);
 
-        // Plant: dyp/dt = -a * yp + b* u ---> impemented inside the real system
+        // Plant: dyp/dt = -a * yp + b* u ---> implemented inside the real system
         yp = RPM;
 
         // Error: e0 = yp - ym
@@ -98,29 +103,29 @@ void loop() {
         // Model: dym/dt = -am * ym + bm * r
         ym_dot = -am * ym + bm * r;
         ym = ym + ym_dot * dt;
+
+        denom = 0.001 + r_filtered * r_filtered + yp_filtered * yp_filtered;
         
         // MIT
-        theta1_dot = -gamma *  r_filtered * e0;
-        theta2_dot =  gamma * yp_filtered * e0;
+        theta1_dot = -gamma *  (r_filtered/denom) * e0;
+        theta2_dot =  gamma * (yp_filtered/denom) * e0;
 
         // Euler integration
         theta1 = theta1 + theta1_dot * dt;
         theta2 = theta2 + theta2_dot * dt;
-        
-        // Clamp θ1, θ2 for better tracking
-        if(theta1 > 10) theta1 = 10;
-        if(theta2 > 10) theta2 = 10;
 
         // Controller
         u = theta1 * r - theta2 * yp;
 
         if (u >= 0 && u <= 255) {
             motorSpeed = u; 
-            analogWrite(MOTOR_FWD, motorSpeed);       
+            analogWrite(MOTOR_FWD, motorSpeed);
+            analogWrite(MOTOR_REV, 0);
         }
         else if (u < 0 && u >= -255) {
             motorSpeed = -u; 
-            analogWrite(MOTOR_REV, motorSpeed);   
+            analogWrite(MOTOR_REV, motorSpeed);
+            analogWrite(MOTOR_FWD, 0);
         }
 
         detachInterrupt(digitalPinToInterrupt(ENCODER_PIN1));
@@ -132,34 +137,15 @@ void loop() {
         lastTime = currentTime;
 
         attachInterrupt(digitalPinToInterrupt(ENCODER_PIN1), countPulse, RISING);
-
-        // Helper signals
-        Serial.print("low:");
-        Serial.println(0);
-        Serial.print("up:");
-        Serial.println(28);
-
-        // Other plots
-        Serial.print("RPM:");
-        Serial.println(RPM);
-
-        Serial.print("ref:");
-        Serial.println(ref);
-
-        // Serial.print("u:");
-        // Serial.println(u);
-
-        // Serial.print("θ1:");
-        // Serial.println(theta1);
-
-        // Serial.print("θ2");
-        // Serial.println(theta2);
-
-        // Serial.print("e0:");
-        // Serial.println(e0);
-
-        // Serial.print("ym:");
-        // Serial.println(ym);
+        
+        // Plots
+        Serial.print(RPM);
+        Serial.print(",");
+        Serial.print(ym);
+        Serial.print(",");
+        Serial.print(theta1);
+        Serial.print(",");
+        Serial.println(theta2);
     }
 }
 
