@@ -16,13 +16,13 @@ float Ts = 100;
 float dt = 0;
 
 int motorSpeed = 0;
-int u = 0; // before: PWM_in, now: u
+int u = 0;
 float RPM = 20;
 
-int ref = 0; // Reference Signal in RPM
+int ref = 0;
 int r = 0;
-float e0 = 0;
 
+float e0 = 0;
 float yp = 0;
 float ym = 0, ym_dot = 0;
 float r_filtered = 0, r_filtered_dot = 0;
@@ -69,7 +69,7 @@ void loop() {
 
     // For sinusoidal function
     t = currentTime * 0.001;  // (sec)
-    ref = 16 + 5*sin(3*t);
+    ref = 16 + 5 * sin(3 * t);
 
     if (dt >= Ts) {
         dt = dt/1000;

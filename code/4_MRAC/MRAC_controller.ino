@@ -1,43 +1,43 @@
 #define MOTOR_FWD     5
-#define MOTOR_REV     6
+#define MOTOR_REV     4
 #define ENCODER_PIN1  2
 #define ENCODER_PIN2  3
 #define PPR           7
 #define GEAR_RATIO  300
 
+volatile int lastEncoded = 0;
 volatile int pulseCount = 0;
+volatile long encoderValue = 0;
 
 unsigned long lastTime = 0;
 unsigned long currentTime = 0;
 float Ts = 100;
-float t = 0;
+float dt = 0;
 
 int motorSpeed = 0;
 int u = 0;
 float RPM = 0;
 
-int ref = 18; // Reference applied to controller
+int ref = 18;
 int r = 18;
 
 float error = 0;
 float x = 0;
 float xm = 0, xm_dot = 0;
+float kx = 0, kx_dot = 0;
+float kr = 0, kr_dot = 0;
 
-float kx_dot=0, kr_dot=0, kx=0, kr=0;
+float am = 2, bm = 2;
 float gamma_x = 0.01, gamma_r = 0.005;
 float sigma_x = 1, sigma_r = 1;
 
-float am = 2, bm = 2;
-
-// ------------------- NEW REFERENCE SEQUENCE -------------------
-// Βάλε εδώ τις δικές σου τιμές
-int refs[]   = {15, 18, 20};          // r1, r2, r3...
-int delays[] = {8000, 6000, 6000};    // delay1, delay2, delay3 (ms)
+// Reference sequence
+int refs[]   = {15, 18, 20};       // r1, r2, r3 (reference signals)
+int delays[] = {8000, 6000, 6000}; // delay1, delay2, delay3 (ms)
 
 int numSteps = sizeof(refs) / sizeof(refs[0]);
 int currentStep = 0;
 unsigned long stepStartTime = 0;
-// --------------------------------------------------------------
 
 void setup() {
     Serial.begin(9600);
@@ -49,37 +49,30 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(ENCODER_PIN1), countPulse, RISING);
 
     lastTime = millis();
-    stepStartTime = millis();   // ξεκινάει το πρώτο ref
+    stepStartTime = millis();
 }
 
 void loop() {
+    currentTime = millis();
+    dt = currentTime - lastTime;
 
-    // ------------------- ΕΦΑΡΜΟΓΗ ΑΚΟΛΟΥΘΙΑΣ REF -------------------
-    // for step
-    unsigned long now = millis();
-    if (now - stepStartTime >= delays[currentStep]) {
+    // For step function
+    if (currentTime - stepStartTime >= delays[currentStep]) {
         currentStep++;
         if (currentStep >= numSteps) {
-            currentStep = 0;  // loop sequence
+            currentStep = 0;
         }
 
-        ref = refs[currentStep];  // step
-        stepStartTime = now;
+        ref = refs[currentStep];
+        stepStartTime = currentTime;
     }
 
-    // for sin
-    // t = millis() * 0.001;  // seconds
-    // ref = 16 + 3*sin(0.4*t);
-
-    // --------------------------------------------------------------
-
-    currentTime = millis();
-    float dt = currentTime - lastTime;
+    // For sinusoidal function
+    // t = millis() * 0.001; // (sec)
+    // ref = 16 + 3 * sin(0.4 * t);
 
     if (dt >= Ts) {
-        dt = dt/1000.0;
-
-        // reference applied
+        dt = dt/1000;
         r = ref;
 
         // System measurement
@@ -125,7 +118,7 @@ void loop() {
 
         attachInterrupt(digitalPinToInterrupt(ENCODER_PIN1), countPulse, RISING);
 
-        // ------------------- SERIAL OUTPUT για Python -------------------
+        // Plots
         Serial.print(RPM);
         Serial.print(",");
         Serial.print(xm);
@@ -133,7 +126,6 @@ void loop() {
         Serial.print(kr);
         Serial.print(",");
         Serial.println(kx);
-
     }
 }
 
