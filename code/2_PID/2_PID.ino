@@ -46,10 +46,10 @@ void setup() {
 }
 
 void loop() {
-    // For step function
     currentTime = millis();
     dt = currentTime - lastTime;
-    
+
+    // For step function
     if (currentTime - stepStartTime >= delays[currentStep]) {
         currentStep++;
         if (currentStep >= numSteps) {
