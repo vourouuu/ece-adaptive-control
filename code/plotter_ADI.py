@@ -1,5 +1,5 @@
-import serial
-import matplotlib.pyplot as plt
+import serial                                 
+import matplotlib.pyplot as plt               
 from matplotlib.animation import FuncAnimation
 import numpy as np
 
@@ -7,7 +7,7 @@ SERIAL_PORT = '/dev/ttyACM0'
 BAUD_RATE = 9600
 
 data_points = 200
-var_names = ["RPM", "ym", "theta1", "theta2"]
+var_names = ["x", "xm", "a_hat", "b_hat"]
 
 ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=0.1)
 ser.flushInput()
@@ -19,24 +19,23 @@ data_arrays = [np.zeros(data_points) for _ in range(n_vars)]
 # FIGURE WITH 2 SUBPLOTS
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6))
 
-# --- first subplot (RPM, xm)
-line1, = ax1.plot(data_arrays[0], label="x")
-line2, = ax1.plot(data_arrays[1], label="xm")
+# --- first subplot (x, xm)
+line1, = ax1.plot(data_arrays[0], label="$x$")
+line2, = ax1.plot(data_arrays[1], label="$x_m$")
 ax1.set_xlim(0, data_points)
 ax1.set_ylim(0, 28)
 ax1.legend()
 ax1.set_ylabel("Amplitude (RPM)")
-ax1.set_title("MIT Controller")
+ax1.set_title("ADI Controller")
 
-# --- second subplot (kr, kx)
-line3, = ax2.plot(data_arrays[2], label="θ1")
-line4, = ax2.plot(data_arrays[3], label="θ2")
+# --- second subplot (a_hat, b_hat)
+line3, = ax2.plot(data_arrays[2], label="$\hat{a}$")
+line4, = ax2.plot(data_arrays[3], label="$\hat{b}$")
 ax2.set_xlim(0, data_points)
-ax2.set_ylim(-10, 20)
+ax2.set_ylim(-2, 100)
 ax2.set_xlabel("Samples")
 ax2.set_ylabel("Parameters' Value")
 ax2.legend()
-# ax2.set_title("kr & kx")
 
 lines = [line1, line2, line3, line4]
 

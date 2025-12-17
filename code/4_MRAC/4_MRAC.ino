@@ -1,5 +1,5 @@
-#define MOTOR_FWD     5
-#define MOTOR_REV     4
+#define MOTOR_FWD     4
+#define MOTOR_REV     5
 #define ENCODER_PIN1  2
 #define ENCODER_PIN2  3
 #define PPR           7
@@ -11,15 +11,16 @@ volatile long encoderValue = 0;
 
 unsigned long lastTime = 0;
 unsigned long currentTime = 0;
-float Ts = 100;
+float t = 0;
 float dt = 0;
+float Ts = 100;
 
 int motorSpeed = 0;
 int u = 0;
 float RPM = 0;
 
-int ref = 18;
-int r = 18;
+float ref = 0;
+float r = 0;
 
 float error = 0;
 float x = 0;
@@ -27,12 +28,12 @@ float xm = 0, xm_dot = 0;
 float kx = 0, kx_dot = 0;
 float kr = 0, kr_dot = 0;
 
-float am = 2, bm = 2;
-float gamma_x = 0.01, gamma_r = 0.005;
-float sigma_x = 1, sigma_r = 1;
+float am = 0.9, bm = 0.9;
+float gamma_x = 0.001, gamma_r = 0.01;
+float sigma_x = 0.05, sigma_r = 0.05;
 
 // Reference sequence
-int refs[]   = {15, 18, 20};       // r1, r2, r3 (reference signals)
+int refs[]   = {18, 18, 18};       // r1, r2, r3 (reference signals)
 int delays[] = {8000, 6000, 6000}; // delay1, delay2, delay3 (ms)
 
 int numSteps = sizeof(refs) / sizeof(refs[0]);
@@ -49,7 +50,7 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(ENCODER_PIN1), countPulse, RISING);
 
     lastTime = millis();
-    stepStartTime = millis();
+    // stepStartTime = millis();
 }
 
 void loop() {
@@ -68,11 +69,13 @@ void loop() {
     }
 
     // For sinusoidal function
-    // t = millis() * 0.001; // (sec)
-    // ref = 16 + 3 * sin(0.4 * t);
+    // t = currentTime * 0.001; // (sec)
+    // ref = 16 + 3 * sin(0.6 * t);
 
     if (dt >= Ts) {
         dt = dt/1000;
+        
+        // Reference signal
         r = ref;
 
         // System measurement
@@ -83,13 +86,27 @@ void loop() {
         xm_dot = -am * xm + bm * r;
         xm += xm_dot * dt;
 
-        // Adaptive laws MRAC
+        // 1. Adaptive laws MRAC
         kx_dot = -gamma_x * x * error * (+1) ;
         kr_dot = -gamma_r * r * error * (+1);
 
-        // Adaptive laws MRAC with sigma modification
+        // 2. Adaptive laws MRAC with sigma modification
         // kx_dot = -gamma_x * (x * error + sigma_x * kx);
         // kr_dot = -gamma_r * (r * error + sigma_r * kr);
+
+        // 3. Adaptive laws MRAC with epsilon modification
+        // kx_dot = -gamma_x * (x * error + sigma_x * abs(error) * kx);
+        // kr_dot = -gamma_r * (r * error + sigma_r * abs(error) * kr);
+
+        // 4. Dead zone for MRAC
+        // if(abs(error) < 2) {
+        //     kx_dot = 0;
+        //     kr_dot = 0;
+        // }
+        // else {
+        //     kx_dot = -gamma_x * x * error * (+1) ;
+        //     kr_dot = -gamma_r * r * error * (+1);
+        // }
 
         kx += kx_dot * dt;
         kr += kr_dot * dt;
@@ -119,7 +136,7 @@ void loop() {
         attachInterrupt(digitalPinToInterrupt(ENCODER_PIN1), countPulse, RISING);
 
         // Plots
-        Serial.print(RPM);
+        Serial.print(x);
         Serial.print(",");
         Serial.print(xm);
         Serial.print(",");

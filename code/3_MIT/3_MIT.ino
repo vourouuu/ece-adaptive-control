@@ -1,4 +1,3 @@
-
 #define MOTOR_FWD     5 // Motor Forward pin
 #define MOTOR_REV     4 // Motor Reverse pin
 #define ENCODER_PIN1  2 // Encoder Output 'A' must connected with intreput pin of arduino.
@@ -12,14 +11,16 @@ volatile long encoderValue = 0;
 
 unsigned long lastTime = 0;
 unsigned long currentTime = 0;
-float Ts = 100;
+unsigned long now = 0;
+float t = 0;
 float dt = 0;
+float Ts = 100;
 
 int motorSpeed = 0;
-int u = 0;
-float RPM = 20;
+float u = 0;
+float RPM = 0;
 
-int ref = 0;
+int ref = 20;
 int r = 0;
 
 float e0 = 0;
@@ -28,6 +29,7 @@ float ym = 0, ym_dot = 0;
 float r_filtered = 0, r_filtered_dot = 0;
 float yp_filtered = 0, yp_filtered_dot = 0;
 float theta1 = 0, theta2 = 0, theta1_dot = 0, theta2_dot = 0;
+float denom = 1;
 
 float am = 1, bm = 1;
 float gamma = 1;
@@ -36,9 +38,9 @@ float gamma = 1;
 int refs[]   = {20, 20, 20};       // r1, r2, r3 (reference signals)
 int delays[] = {8000, 6000, 6000}; // delay1, delay2, delay3 (ms)
 
+unsigned long stepStartTime = 0;
 int numSteps = sizeof(refs) / sizeof(refs[0]);
 int currentStep = 0;
-unsigned long stepStartTime = 0;
 
 void setup() {
     Serial.begin(9600);
@@ -113,9 +115,13 @@ void loop() {
         // Euler integration
         theta1 = theta1 + theta1_dot * dt;
         theta2 = theta2 + theta2_dot * dt;
-
+ 
         // Controller
         u = theta1 * r - theta2 * yp;
+
+        if(u >= 250){
+            u = 250;
+        }
 
         if (u >= 0 && u <= 255) {
             motorSpeed = u; 
@@ -153,8 +159,3 @@ void loop() {
 void countPulse() {
     pulseCount++;
 }
-
-
-
-
-
