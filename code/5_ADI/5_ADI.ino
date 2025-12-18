@@ -25,12 +25,12 @@ float r = 0;
 float error = 0;
 float x = 0;
 float xm = 0, xm_dot = 0;
-float a_hat = 20, a_hat_dot = 0;
-float b_hat = 0.5, b_hat_dot = 0;
+float a_hat = 2, a_hat_dot = 0;
+float b_hat = 0.1, b_hat_dot = 0;
 
 float am = 0.9, bm = 0.9;
-float gamma_a = 0.01, gamma_b = 0.0001;
-float sigma_a = 1, sigma_b = 1;
+float gamma_a = 0.01, gamma_b = 0.000001;
+float sigma_a = 0.1, sigma_b = 0.01;
 
 // Reference sequence
 int refs[]   = {18, 18, 18};       // r1, r2, r3 (reference signals)
@@ -50,7 +50,7 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(ENCODER_PIN1), countPulse, RISING);
 
     lastTime = millis();
-    stepStartTime = millis();
+    // stepStartTime = millis();
 }
 
 void loop() {
@@ -58,19 +58,19 @@ void loop() {
     dt = currentTime - lastTime;
 
     // For step function
-    if (currentTime - stepStartTime >= delays[currentStep]) {
-        currentStep++;
-        if (currentStep >= numSteps) {
-            currentStep = 0;
-        }
+    // if (currentTime - stepStartTime >= delays[currentStep]) {
+    //     currentStep++;
+    //     if (currentStep >= numSteps) {
+    //         currentStep = 0;
+    //     }
 
-        ref = refs[currentStep];
-        stepStartTime = currentTime;
-    }
+    //     ref = refs[currentStep];
+    //     stepStartTime = currentTime;
+    // }
 
     // For sinusoidal function
-    // t = currentTime * 0.001; // (sec)
-    // ref = 16 + 3 * sin(0.6 * t);
+    t = currentTime * 0.001; // (sec)
+    ref = 16 + 4 * sin(0.5 * t);
 
     if (dt >= Ts) {
         dt = dt/1000;
@@ -100,13 +100,20 @@ void loop() {
 
         // 4. Dead zone for ADI
         // if(abs(error) < 1.5) {
-            // a_hat_dot = 0
-            // b_hat_dot = 0
+        //     a_hat_dot = 0;
+        //     b_hat_dot = 0;
         // }
         // else {
-            // a_hat_dot = gamma_a * x * error;
-            // b_hat_dot = gamma_b * u * error;
+        //     a_hat_dot = gamma_a * x * error;
+        //     b_hat_dot = gamma_b * u * error;
         // }
+
+        // 5. Projection Operator
+        // th_max = [[20.0, 35.0], [0.0, 0.5]];
+        // eps = 
+        // f = 
+
+
 
         a_hat += a_hat_dot * dt;
         b_hat += b_hat_dot * dt;

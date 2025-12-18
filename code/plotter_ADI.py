@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import numpy as np
 
-SERIAL_PORT = '/dev/ttyACM0'
+SERIAL_PORT = 'COM5' #'/dev/ttyACM0'
 BAUD_RATE = 9600
 
 data_points = 200
@@ -32,7 +32,7 @@ ax1.set_title("ADI Controller")
 line3, = ax2.plot(data_arrays[2], label="$\hat{a}$")
 line4, = ax2.plot(data_arrays[3], label="$\hat{b}$")
 ax2.set_xlim(0, data_points)
-ax2.set_ylim(-2, 100)
+ax2.set_ylim(-0.25, 2)
 ax2.set_xlabel("Samples")
 ax2.set_ylabel("Parameters' Value")
 ax2.legend()
