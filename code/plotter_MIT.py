@@ -12,14 +12,14 @@ var_names = ["RPM", "ym", "theta1", "theta2"]
 ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=0.1)
 ser.flushInput()
 
-# data buffers
+# Data buffers
 n_vars = len(var_names)
 data_arrays = [np.zeros(data_points) for _ in range(n_vars)]
 
-# FIGURE WITH 2 SUBPLOTS
+# Figure with 2 subplots
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6))
 
-# --- first subplot (RPM, xm)
+# --- First subplot (RPM, xm) ---
 line1, = ax1.plot(data_arrays[0], label="x")
 line2, = ax1.plot(data_arrays[1], label="xm")
 ax1.set_xlim(0, data_points)
@@ -28,7 +28,7 @@ ax1.legend()
 ax1.set_ylabel("Amplitude (RPM)")
 ax1.set_title("MIT Controller")
 
-# --- second subplot (kr, kx)
+# --- Second subplot (kr, kx) ---
 line3, = ax2.plot(data_arrays[2], label="θ1")
 line4, = ax2.plot(data_arrays[3], label="θ2")
 ax2.set_xlim(0, data_points)
@@ -36,7 +36,6 @@ ax2.set_ylim(-10, 20)
 ax2.set_xlabel("Samples")
 ax2.set_ylabel("Parameters' Value")
 ax2.legend()
-# ax2.set_title("kr & kx")
 
 lines = [line1, line2, line3, line4]
 
@@ -56,12 +55,12 @@ def update(frame):
     except:
         return lines
 
-    # update buffers
+    # Update buffers
     for arr, v in zip(data_arrays, vals):
         arr[:-1] = arr[1:]
         arr[-1] = v
 
-    # update plot lines
+    # Update plot lines
     for line, arr in zip(lines, data_arrays):
         line.set_ydata(arr)
 

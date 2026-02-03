@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import numpy as np
 
-SERIAL_PORT = 'COM5' #'/dev/ttyACM0'
+SERIAL_PORT = '/dev/ttyACM0'
 BAUD_RATE = 9600
 
 data_points = 200
@@ -12,14 +12,14 @@ var_names = ["x", "xm", "a_hat", "b_hat"]
 ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=0.1)
 ser.flushInput()
 
-# data buffers
+# Data buffers
 n_vars = len(var_names)
 data_arrays = [np.zeros(data_points) for _ in range(n_vars)]
 
-# FIGURE WITH 2 SUBPLOTS
+# Figure with 2 subplots
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6))
 
-# --- first subplot (x, xm)
+# --- First subplot (x, xm) ---
 line1, = ax1.plot(data_arrays[0], label="$x$")
 line2, = ax1.plot(data_arrays[1], label="$x_m$")
 ax1.set_xlim(0, data_points)
@@ -28,7 +28,7 @@ ax1.legend()
 ax1.set_ylabel("Amplitude (RPM)")
 ax1.set_title("ADI Controller")
 
-# --- second subplot (a_hat, b_hat)
+# --- Second subplot (a_hat, b_hat)
 line3, = ax2.plot(data_arrays[2], label="$\hat{a}$")
 line4, = ax2.plot(data_arrays[3], label="$\hat{b}$")
 ax2.set_xlim(0, data_points)
@@ -55,12 +55,12 @@ def update(frame):
     except:
         return lines
 
-    # update buffers
+    # Update buffers
     for arr, v in zip(data_arrays, vals):
         arr[:-1] = arr[1:]
         arr[-1] = v
 
-    # update plot lines
+    # Update plot lines
     for line, arr in zip(lines, data_arrays):
         line.set_ydata(arr)
 

@@ -3,11 +3,11 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import numpy as np
 
-SERIAL_PORT = 'COM5'
+SERIAL_PORT = '/dev/ttyACM0'
 BAUD_RATE = 9600
 
 data_points = 200
-var_names = ["RPM", "ref"] # 2 variables from Arduino
+var_names = ["RPM", "ref"]
 
 ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=0.1)
 ser.flushInput()
@@ -16,7 +16,6 @@ ser.flushInput()
 n_vars = len(var_names)
 data_arrays = [np.zeros(data_points) for _ in range(n_vars)]
 
-# --- SINGLE PLOT WITH 2 LINES ---
 fig, ax = plt.subplots(figsize=(8, 5))
 
 line_rpm, = ax.plot(data_arrays[0], label="RPM")
@@ -46,7 +45,7 @@ def update(frame):
     except:
         return lines
 
-    # Shift arrays & insert new values
+    # Update buffers
     for arr, v in zip(data_arrays, vals):
         arr[:-1] = arr[1:]
         arr[-1] = v
@@ -56,7 +55,6 @@ def update(frame):
         line.set_ydata(arr)
 
     return lines
-
 
 ani = FuncAnimation(fig, update, interval=20, blit=False)
 plt.tight_layout()

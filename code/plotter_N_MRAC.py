@@ -7,7 +7,7 @@ SERIAL_PORT = '/dev/ttyACM0'
 BAUD_RATE = 9600
 
 data_points = 200
-var_names = ["x", "xm", "kr", "kx"]
+var_names = ["theta", "theta_m", "omega", "omega_m", "kx_theta", "kx_omega", "kr"]
 
 ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=0.1)
 ser.flushInput()
@@ -19,25 +19,30 @@ data_arrays = [np.zeros(data_points) for _ in range(n_vars)]
 # Figure with 2 subplots
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6))
 
-# --- First subplot (x, xm)
-line1, = ax1.plot(data_arrays[0], label="$x$")
-line2, = ax1.plot(data_arrays[1], label="$x_m$")
-ax1.set_xlim(0, data_points)
-ax1.set_ylim(0, 28)
-ax1.legend()
-ax1.set_ylabel("Amplitude (RPM)")
-ax1.set_title("MRAC Controller")
+# --- First subplot (θ, ω) ---
+line_theta,    = ax1.plot(data_arrays[0], label=r"$\theta$")
+line_theta_m,  = ax1.plot(data_arrays[1], label=r"$\theta_m$", linestyle='--')
+line_omega,    = ax1.plot(data_arrays[2], label=r"$\omega$")
+line_omega_m,  = ax1.plot(data_arrays[3], label=r"$\omega_m$", linestyle='--')
 
-# --- Second subplot (kr, kx)
-line3, = ax2.plot(data_arrays[2], label="$k_r$")
-line4, = ax2.plot(data_arrays[3], label="$k_x$")
+ax1.set_xlim(0, data_points)
+ax1.set_ylim(-120, 480)
+ax1.legend(loc="upper right", fontsize='small', ncol=2)
+ax1.set_ylabel("States (deg & RPM)")
+ax1.set_title("Vector MRAC")
+
+# --- Second subplot (kx_theta, kx_omega, kr) ---
+line_kx_th, = ax2.plot(data_arrays[4], label="$k_{x,\\theta}$")
+line_kx_om, = ax2.plot(data_arrays[5], label="$k_{x,\\omega}$")
+line_kr,    = ax2.plot(data_arrays[6], label="$k_r$")
+
 ax2.set_xlim(0, data_points)
-ax2.set_ylim(-10, 20)
+ax2.set_ylim(-100, 200)
 ax2.set_xlabel("Samples")
 ax2.set_ylabel("Parameters' Value")
-ax2.legend()
+ax2.legend(loc="upper right", fontsize='small')
 
-lines = [line1, line2, line3, line4]
+lines = [line_theta, line_theta_m, line_omega, line_omega_m, line_kx_th, line_kx_om, line_kr]
 
 def update(frame):
     line_bytes = ser.readline().decode(errors='ignore').strip()
@@ -52,7 +57,7 @@ def update(frame):
 
     try:
         vals = [float(x) for x in parts]
-    except:
+    except ValueError:
         return lines
 
     # Update buffers
@@ -63,10 +68,10 @@ def update(frame):
     # Update plot lines
     for line, arr in zip(lines, data_arrays):
         line.set_ydata(arr)
-
+    
     return lines
 
-ani = FuncAnimation(fig, update, interval=20, blit=False)
+ani = FuncAnimation(fig, update, interval=50, blit=False)
 plt.tight_layout()
 plt.show()
 
