@@ -4,9 +4,6 @@ Throughout the semester, we were assigned four practical exercises, which I have
 
 ---
 
-## books
-This folder contains two books and Control Map file.
-
 ## homeworks
 This folder contains the four homework assignments of the course.
 
