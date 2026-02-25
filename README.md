@@ -1,5 +1,5 @@
 # ECE - Adaptive Control
-This course, taught by Associate Professor [Charalampos Bechlioulis](https://www.ece.upatras.gr/index.php/en/ece-faculty/bechlioulis-charalambos.html), is part of the 8th semester curriculum at the Department of Electrical and Computer Engineering, University of Patras.
+This course, taught by Associate Professor [Charalampos Bechlioulis](https://www.ece.upatras.gr/index.php/en/ece-faculty/bechlioulis-charalambos.html), is part of the 9th semester curriculum at the Department of Electrical and Computer Engineering, University of Patras.
 Throughout the semester, we were assigned four practical exercises, which I have included in this Git repository.
 
 ---
